@@ -1,0 +1,71 @@
+Meet-App API:
+
+API Description
+
+	User System
+
+		int : RegisterUser(Name : String)
+			Stores user in database
+			Generates UserId and returns it
+
+		void : GetUserId(Name : String)
+			Returns the ID for the user with the given name
+
+		JSON : GetUserInformation(UserId : int)
+			Returns the data (name) associated with the specified user
+	
+	Friend System
+
+		void : SendFriendRequest(FromUser : int, ToUser : int)
+			Adds pending friend request to ToUser's entry in database
+
+		int[] : GetPendingFriendRequests(UserId : int)
+			Returns an array of all pending user IDs for a given user
+
+		void : AcceptFriendRequest(UserId : int, FriendUser : int)
+			Removes pending user id from UserId
+			Adds FriendUser to UserId's friends
+			Adds UserId to FriendUser's friends
+
+		void : DeclineFriendRequest(UserId : int, FriendUser : int)
+			Removes pending user id from UserId
+
+	Meetup System
+
+		int : CreateMeetup(Creator : int, Name : String, Description : String)
+			Stores meetup in database
+			Generates MeetupId and returns it
+
+		JSON : GetMeetupInformation(MeetupId : int)
+			Returns the data (name, description, users, locations) associated with the specified meet up
+
+
+		void : SendMeetupRequest(FromUser : int, ToUser : int, MeetupId : int)
+			Adds pending meetup request to ToUser's entry in database
+
+		int[] : GetPendingMeetups(UserId : int)
+			Returns an array of all pending meetup IDs for a given user
+
+		void : AcceptMeetup(UserId : int, MeetupId : int, Latitude : double, Longitude : double)
+			Removes pending meetup from user, adds user and user's location to meetup
+
+		void : DeclineMeetup(UserId : int, MeetupId : int)
+			Removes pending meetup from UserId
+
+Database Structure
+
+	Users: user IDs point to User objects
+
+	User
+		String name
+		int array of pending meetup IDs
+		int array of pending user IDs
+		int array of friend user IDs
+
+	Meetups: meetup IDs point to Meetup objects
+
+	Meetup
+		String name
+		String description
+		int array of user ids
+		2d double array of lat/long coords
