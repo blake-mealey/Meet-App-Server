@@ -4,6 +4,19 @@ var router = express.Router();
 var API = require('./../api.js');
 var MyAPI = API.Users;
 
+router.post('/clearDB', function(req, res, next) {
+	var args = req.body;
+	console.log(args);
+	var err = API.ValidateRequest(args, []);
+	if(err) {
+		res.json(API.ConstructResponse(err, null));
+	} else {
+		MyAPI.ClearDB(function(err, result) {
+			res.json(API.ConstructResponse(err, result));
+		});
+	}
+});
+
 router.post('/register', function(req, res, next) {
 	var args = req.body;
 	console.log(args);

@@ -37,6 +37,18 @@ API.ConstructResponse = function(err, result) {
 
 API.Users = {}
 
+API.Users.ClearDB = function(callback) {
+	MongoClient.connect(config.db_url, function(err, db) {
+		if(err != null) { callback(API.Errors.DatabaseError); return; }
+
+		db.collection("users").remove({}, function(err, results) {
+			if(err != null) { callback(API.Errors.DatabaseError); return; }
+
+			callback(null);
+		});
+	});
+}
+
 API.Users.Register = function(name, callback) {
 	MongoClient.connect(config.db_url, function(err, db) {
 		if(err != null) { callback(API.Errors.DatabaseError); return; }
@@ -237,6 +249,18 @@ API.Friends.Decline = function(toUser, fromUser, callback) {
 }
 
 API.Meetups = {}
+
+API.Meetups.ClearDB = function(callback) {
+	MongoClient.connect(config.db_url, function(err, db) {
+		if(err != null) { callback(API.Errors.DatabaseError); return; }
+
+		db.collection("meetups").remove({}, function(err, results) {
+			if(err != null) { callback(API.Errors.DatabaseError); return; }
+
+			callback(null);
+		});
+	});
+}
 
 API.Meetups.Create = function(creator, info, location, callback) {
 	MongoClient.connect(config.db_url, function(err, db) {
