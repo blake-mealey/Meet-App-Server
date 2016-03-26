@@ -222,13 +222,11 @@ API.Friends.Accept = function(toUser, fromUser, callback) {
 
 API.Friends.Decline = function(toUser, fromUser, callback) {
 	MongoClient.connect(config.db_url, function(err, db) {
-		console.log(err);
 		if(err != null) { callback(API.Errors.DatabaseError); return; }
 
 		db.collection("users").findOne(
 			{ "userId": toUser, "pendingFRs": { $in: [fromUser] } },
 			function(err, user) {
-				console.log(err);
 				if(err != null) { callback(API.Errors.DatabaseError); return; }
 
 				if(user == null) {
@@ -239,7 +237,6 @@ API.Friends.Decline = function(toUser, fromUser, callback) {
 						{ "userId": toUser },
 						{ $pull: { "pendingFRs": fromUser } },
 						function(err, results) {
-							console.log(err);
 							if(err != null) { callback(API.Errors.DatabaseError); return; }
 
 							db.close();
@@ -413,7 +410,7 @@ API.Meetups.Accept = function(toUser, meetupId, location, callback) {
 				} else {
 					db.collection("users").updateOne(
 						{ "userId": toUser },
-						{ $pull: { "pendingMRs": meetupId }, $push: { "meetups": meetupId } }
+						{ $pull: { "pendingMRs": meetupId }, $push: { "meetups": meetupId } },
 						function(err, results) {
 							if(err != null) { callback(API.Errors.DatabaseError); return; }
 
@@ -449,7 +446,7 @@ API.Meetups.Decline = function(toUser, meetupId, callback) {
 				} else {
 					db.collection("users").updateOne(
 						{ "userId": toUser },
-						{ $pull: { "pendingMRs": meetupId } }
+						{ $pull: { "pendingMRs": meetupId } },
 						function(err, results) {
 							if(err != null) { callback(API.Errors.DatabaseError); return; }
 
