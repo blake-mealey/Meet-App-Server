@@ -44,6 +44,7 @@ API.Users.ClearDB = function(callback) {
 		db.collection("users").remove({}, function(err, results) {
 			if(err != null) { callback(API.Errors.DatabaseError); return; }
 
+			db.close();
 			callback(null);
 		});
 	});
@@ -74,9 +75,10 @@ API.Users.Register = function(name, callback) {
 							"pendingMRs": []
 						}
 
-						db.collection("users").insertOne(user, function(err, result) {
+						db.collection("users").insertOne(user, function(err, results) {
 							if(err != null) { callback(API.Errors.DatabaseError); return; }
 
+							db.close();
 							callback(null, count);
 						});
 					});
@@ -206,6 +208,7 @@ API.Friends.Accept = function(toUser, fromUser, callback) {
 								function(err, results) {
 									if(err != null) { callback(API.Errors.DatabaseError); return; }
 
+									db.close();
 									callback(null);
 								}
 							);
@@ -239,6 +242,7 @@ API.Friends.Decline = function(toUser, fromUser, callback) {
 							console.log(err);
 							if(err != null) { callback(API.Errors.DatabaseError); return; }
 
+							db.close();
 							callback(null);
 						}
 					);
@@ -257,6 +261,7 @@ API.Meetups.ClearDB = function(callback) {
 		db.collection("meetups").remove({}, function(err, results) {
 			if(err != null) { callback(API.Errors.DatabaseError); return; }
 
+			db.close();
 			callback(null);
 		});
 	});
@@ -279,44 +284,182 @@ API.Meetups.Create = function(creator, info, location, callback) {
 				"locations": [location]
 			}
 
-			db.collection("meetups").insertOne(meetup, function(err, result) {
+			db.collection("meetups").insertOne(meetup, function(err, results) {
 				if(err != null) { callback(API.Errors.DatabaseError); return; }
 
+				db.close();
 				callback(null, count);
 			});
 		});
 	});
 }
 
-API.Meetups.Close = function(meetupid, callback) {
+API.Meetups.Close = function(meetupId, callback) {
+	MongoClient.connect(config.db_url, function(err, db) {
+		if(err != null) { callback(API.Errors.DatabaseError); return; }
 
+		db.collection("meetups").removeOne(
+			{ "meetupId": meetupId },
+			function(err, results) {
+				if(err != null) { callback(API.Errors.DatabaseError); return; }
+
+				db.collection("users").updateMany(
+					{ $or: [{ "meetups": { $in: [meetupId] } }, { "pendingMRs": { $in: [meetupId] } }] },
+					{ $pull: { "meetups": meetupId, "pendingMRs": meetupId } },
+					function(err, results) {
+						if(err != null) { callback(API.Errors.DatabaseError); return; }
+
+						db.close();
+						callback(null);
+					}
+				);
+			}
+		);
+	});
 }
 
-API.Meetups.GetInformation = function(meetupid, callback) {
+API.Meetups.GetInformation = function(meetupId, callback) {
+	MongoClient.connect(config.db_url, function(err, db) {
+		if(err != null) { callback(API.Errors.DatabaseError); return; }
 
+		db.collection("meetups").findOne(
+			{ "meetupId": meetupId },
+			function(err, meetup) {
+				if(err != null) { callback(API.Errors.DatabaseError); return; }
+
+				db.close();
+				if(meetup == null) {
+					callback(API.Errors.MeetupDNE);
+				} else {
+					callback(null, meetup);
+				}
+			}
+		);
+	});
 }
 
-API.Meetups.SendRequest = function(meetupid, toUser, callback) {
+API.Meetups.SendRequest = function(meetupId, toUser, callback) {
+	MongoClient.connect(config.db_url, function(err, db) {
+		if(err != null) { callback(API.Errors.DatabaseError); return; }
 
+		db.collection("meetups").findOne(
+			{ "meetupId": meetupId },
+			function(err, meetup) {
+				if(err != null) { callback(API.Errors.DatabaseError); return; }
+
+				if(meetup == null) {
+					db.close();
+					callback(API.Errors.MeetupDNE);
+				} else {
+					db.collection("users").findOne(
+						{ "userId": toUser, "meetups": { $nin: [meetupId] }, "pendingMRs": { $nin: [meetupId] } },
+						function(err, user) {
+							if(err != null) { callback(API.Errors.DatabaseError); return; }
+
+							if(user == null) {
+								db.close();
+								callback(API.Errors.UserDNE);
+							} else {
+								db.collection("users").updateOne(
+									{ "userId": toUser },
+									{ $push: { "pendingMRs": meetupId } },
+									function(err, results) {
+										if(err != null) { callback(API.Errors.DatabaseError); return; }
+
+										callback(null);
+									}
+								);
+							}
+						}
+					);
+				}
+			}
+		);
+	});
 }
 
 API.Meetups.GetPendingRequests = function(userId, callback) {
+	MongoClient.connect(config.db_url, function(err, db) {
+		if(err != null) { callback(API.Errors.DatabaseError); return; }
 
+		db.collection("users").findOne(
+			{ "userId": userId },
+			function(err, user) {
+				if(err != null) { callback(API.Errors.DatabaseError); return; }
+
+				db.close();
+				if(user == null) {
+					callback(API.Errors.UserDNE);
+				} else {
+					callback(user.pendingMRs);
+				}
+			}
+		);
+	});
 }
 
-API.Meetups.Accept = function(toUser, meetupid, location, callback) {
+API.Meetups.Accept = function(toUser, meetupId, location, callback) {
+	MongoClient.connect(config.db_url, function(err, db) {
+		if(err != null) { callback(API.Errors.DatabaseError); return; }
 
+		db.collection("users").findOne(
+			{ "userId": toUser, "pendingMRs": { $in: [meetupId] } },
+			function(err, user) {
+				if(err != null) { callback(API.Errors.DatabaseError); return; }
+
+				if(user == null) {
+					db.close();
+					callback(API.Errors.UserDNE);
+				} else {
+					db.collection("users").updateOne(
+						{ "userId": toUser },
+						{ $pull: { "pendingMRs": meetupId }, $push: { "meetups": meetupId } }
+						function(err, results) {
+							if(err != null) { callback(API.Errors.DatabaseError); return; }
+
+							db.collection("meetups").updateOne(
+								{ "meetupId": meetupId },
+								{ $push: { "members": toUser, "locations": location } },
+								function(err, results) {
+									if(err != null) { callback(API.Errors.DatabaseError); return; }
+
+									callback(null);
+								}
+							);
+						}
+					);
+				}
+			}
+		);
+	});
 }
 
-API.Meetups.Decline = function(toUser, meetupid, callback) {
+API.Meetups.Decline = function(toUser, meetupId, callback) {
+	MongoClient.connect(config.db_url, function(err, db) {
+		if(err != null) { callback(API.Errors.DatabaseError); return; }
 
+		db.collection("users").findOne(
+			{ "userId": toUser, "pendingMRs": { $in: [meetupId] } },
+			function(err, user) {
+				if(err != null) { callback(API.Errors.DatabaseError); return; }
+
+				if(user == null) {
+					db.close();
+					callback(API.Errors.UserDNE);
+				} else {
+					db.collection("users").updateOne(
+						{ "userId": toUser },
+						{ $pull: { "pendingMRs": meetupId } }
+						function(err, results) {
+							if(err != null) { callback(API.Errors.DatabaseError); return; }
+
+							callback(null);
+						}
+					);
+				}
+			}
+		);
+	});
 }
 
 module.exports = API
-
-/*
-MongoClient.connect(config.db_url, function(err, db) {
-		if(err != null) { callback(API.Errors.DatabaseError); return; }
-
-	});
-*/
