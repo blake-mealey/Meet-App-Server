@@ -268,26 +268,38 @@ API.Meetups.Create = function(creator, info, location, callback) {
 	MongoClient.connect(config.db_url, function(err, db) {
 		if(err != null) { callback(API.Errors.DatabaseError); return; }
 
-		db.collection("meetups").count({}, function(err, count) {
-			if(err != null) { callback(API.Errors.DatabaseError); return; }
-
-			var meetup = {
-				"meetupId": count,
-				"creatorId": creator,
-				"name": info.name,
-				"description": info.description,
-				"time": info.time,
-				"members": [creator],
-				"locations": [location]
-			}
-
-			db.collection("meetups").insertOne(meetup, function(err, results) {
+		db.collection("users").findOne(
+			{ "userId": creator },
+			function(err, user) {
 				if(err != null) { callback(API.Errors.DatabaseError); return; }
 
-				db.close();
-				callback(null, count);
-			});
-		});
+				if(user == null) {
+					db.close();
+					callback(API.Errors.UserDNE);
+				} else {
+					db.collection("meetups").count({}, function(err, count) {
+						if(err != null) { callback(API.Errors.DatabaseError); return; }
+
+						var meetup = {
+							"meetupId": count,
+							"creatorId": creator,
+							"name": info.name,
+							"description": info.description,
+							"time": info.time,
+							"members": [creator],
+							"locations": [location]
+						}
+
+						db.collection("meetups").insertOne(meetup, function(err, results) {
+							if(err != null) { callback(API.Errors.DatabaseError); return; }
+
+							db.close();
+							callback(null, count);
+						});
+					});
+				}
+			}
+		);
 	});
 }
 
@@ -295,21 +307,33 @@ API.Meetups.Close = function(meetupId, callback) {
 	MongoClient.connect(config.db_url, function(err, db) {
 		if(err != null) { callback(API.Errors.DatabaseError); return; }
 
-		db.collection("meetups").removeOne(
+		db.collection("meetups").findOne(
 			{ "meetupId": meetupId },
-			function(err, results) {
+			function(err, meetup) {
 				if(err != null) { callback(API.Errors.DatabaseError); return; }
 
-				db.collection("users").updateMany(
-					{ $or: [{ "meetups": { $in: [meetupId] } }, { "pendingMRs": { $in: [meetupId] } }] },
-					{ $pull: { "meetups": meetupId, "pendingMRs": meetupId } },
-					function(err, results) {
-						if(err != null) { callback(API.Errors.DatabaseError); return; }
+				if(meetup == null) {
+					db.close();
+					callback(API.Errors.MeetupDNE);
+				} else {
+					db.collection("meetups").removeOne(
+						{ "meetupId": meetupId },
+						function(err, results) {
+							if(err != null) { callback(API.Errors.DatabaseError); return; }
 
-						db.close();
-						callback(null);
-					}
-				);
+							db.collection("users").updateMany(
+								{ $or: [{ "meetups": { $in: [meetupId] } }, { "pendingMRs": { $in: [meetupId] } }] },
+								{ $pull: { "meetups": meetupId, "pendingMRs": meetupId } },
+								function(err, results) {
+									if(err != null) { callback(API.Errors.DatabaseError); return; }
+
+									db.close();
+									callback(null);
+								}
+							);
+						}
+					);
+				}
 			}
 		);
 	});
@@ -363,6 +387,7 @@ API.Meetups.SendRequest = function(meetupId, toUser, callback) {
 									function(err, results) {
 										if(err != null) { callback(API.Errors.DatabaseError); return; }
 
+										db.close();
 										callback(null);
 									}
 								);
@@ -388,7 +413,7 @@ API.Meetups.GetPendingRequests = function(userId, callback) {
 				if(user == null) {
 					callback(API.Errors.UserDNE);
 				} else {
-					callback(user.pendingMRs);
+					callback(null, user.pendingMRs);
 				}
 			}
 		);
@@ -420,6 +445,7 @@ API.Meetups.Accept = function(toUser, meetupId, location, callback) {
 								function(err, results) {
 									if(err != null) { callback(API.Errors.DatabaseError); return; }
 
+									db.close();
 									callback(null);
 								}
 							);
@@ -450,6 +476,7 @@ API.Meetups.Decline = function(toUser, meetupId, callback) {
 						function(err, results) {
 							if(err != null) { callback(API.Errors.DatabaseError); return; }
 
+							db.close();
 							callback(null);
 						}
 					);
