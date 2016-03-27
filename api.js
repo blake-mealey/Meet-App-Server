@@ -293,8 +293,16 @@ API.Meetups.Create = function(creator, info, location, callback) {
 						db.collection("meetups").insertOne(meetup, function(err, results) {
 							if(err != null) { callback(API.Errors.DatabaseError); return; }
 
-							db.close();
-							callback(null, count);
+							db.collection("users").updateOne(
+								{ "userId": creator },
+								{ $push: { "meetups": count } },
+								function(err, results) {
+									if(err != null) { callback(API.Errors.DatabaseError); return; }
+
+									db.close();
+									callback(null, count);
+								}
+							);
 						});
 					});
 				}

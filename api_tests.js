@@ -254,7 +254,12 @@ test("create meetup", function(callback) {
 			assertNotNull(err);
 			assertNull(id);
 
-			callback();
+			API.Meetups.Create(1, { "name": "testing", "description": "1.. 2.. 3..", "time": "4:20BI" }, { "lat": 51.03, "lng": 114.05 }, function(err, id) {
+				assertNull(err);
+				assertEqual(id, 1);
+
+				callback();
+			});
 		});
 	});
 });
@@ -356,7 +361,7 @@ test("get meetup information", function(callback) {
 	});
 });
 
-test("close meetups", function(callback) {
+/*test("close meetups", function(callback) {
 	API.Meetups.Close(0, function(err) {
 		assertNull(err);
 
@@ -366,7 +371,7 @@ test("close meetups", function(callback) {
 			callback();
 		});
 	});
-});
+});*/
 
 /*
 
