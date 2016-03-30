@@ -13,8 +13,8 @@ API.Errors = {
 	"InvalidFriendAssociation": "invalid_friend_association"
 }
 
-API.ValidateRequest = function(req, args) {
-	if(req.apiKey != config.api_key) {
+API.ValidateRequest = function(req, args, dontCheckAPIKey) {
+	if(!dontCheckAPIKey && req.apiKey != config.api_key) {
 		return API.Errors.InvalidAPIKey;
 	} else {
 		for(var i = 0; i < args.length; i++) {

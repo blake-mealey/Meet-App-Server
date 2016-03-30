@@ -21,8 +21,8 @@ router.post('/create', function(req, res, next) {
 	var args = req.body;
 	console.log(args);
 	var err = API.ValidateRequest(args, ["creator", "info", "location"]);
-	if(!err) err = API.ValidateRequest(args.info, ["name", "description", "time"]);
-	if(!err) err = API.ValidateRequest(args.location, ["lat", "lng"]);
+	if(!err) err = API.ValidateRequest(args.info, ["name", "description", "time"], true);
+	if(!err) err = API.ValidateRequest(args.location, ["lat", "lng"], true);
 	if(err) {
 		res.json(API.ConstructResponse(err, null));
 	} else {
@@ -92,7 +92,7 @@ router.post('/accept', function(req, res, next) {
 	var args = req.body;
 	console.log(args);
 	var err = API.ValidateRequest(args, ["toUser", "meetupId", "location"]);
-	if(!err) err = API.ValidateRequest(args.location, ["lat", "lng"]);
+	if(!err) err = API.ValidateRequest(args.location, ["lat", "lng"], true);
 	if(err) {
 		res.json(API.ConstructResponse(err, null));
 	} else {
