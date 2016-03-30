@@ -13,15 +13,15 @@ var meet3;
 function setupUsers() {
 	API.Users.ClearDB(function() {
 		API.Meetups.ClearDB(function() {
-			API.Users.Register("Alma", function(id) {
+			API.Users.Register("Alma", function(err, id) {
 				alma = id;
-				API.Users.Register("Bert", function(id) {
+				API.Users.Register("Bert", function(err, id) {
 					bert = id;
-					API.Users.Register("Cuthbert", function(id) {
+					API.Users.Register("Cuthbert", function(err, id) {
 						cuthbert = id;
-						API.Users.Register("Drake", function(id) {
+						API.Users.Register("Drake", function(err, id) {
 							drake = id;
-							API.Users.Register("Elrond", function(id) {
+							API.Users.Register("Elrond", function(err, id) {
 								elrond = id;
 
 								setupFriends();
@@ -55,19 +55,19 @@ function setupFriends() {
 function setupMeetups() {
 	API.Meetups.Create(alma, 
 			{"name":"Final project discussion", "description":"Let's have a quick talk face-to-face about who will do what for the final project.", "time":"10:15"},
-			{"lat":51.076915,"lng":-114.140947}, function(id) {
+			{"lat":51.076915,"lng":-114.140947}, function(err, id) {
 
 		meet1 = id;
 
 		API.Meetups.Create(cuthbert, 
 				{"name":"Hangout", "description":"Wanna hang out?", "time":"19:00"},
-				{"lat":51.035885,"lng":-114.056253}, function(id) {
+				{"lat":51.035885,"lng":-114.056253}, function(err, id) {
 					
 			meet2 = id;
 
 			API.Meetups.Create(drake, 
 					{"name":"Coffee?", "description":"Or something.", "time":"12:30"},
-					{"lat":51.035885,"lng":-114.056253}, function(id) {
+					{"lat":51.035885,"lng":-114.056253}, function(err, id) {
 						
 				meet3 = id;
 
